@@ -28,6 +28,17 @@ ssbClient((err, api) => {
         if (typeof value === 'string') {
           // LEAF
           if (key in ref && supportedMuxrpcTypes.includes(value)) {
+            if (key === 'help') {
+              /*
+               * This parses muxrpc help text, but it seems too experimental.
+               * See also: https://github.com/ssbc/muxrpc/issues/54
+               *
+               * ref[key]((err, value) => {
+               *   if (err) throw err
+               *   console.log(value)
+               * })
+               */
+            }
             return [key, value]
           } else {
             return []
@@ -111,15 +122,28 @@ ssbClient((err, api) => {
             entries.forEach((entry) =>
               walk(entry, [key, ...previous], subSubYargs)
             )
+          }, () => {
+            yargs.showHelp()
+            yargs.exit(1)
           })
         }
       }
     }
 
-    Object.entries(manifest).forEach((entry) => walk(entry, [], yargs))
+    Object
+      .entries(manifest)
+      .forEach((entry) =>
+        walk(entry, [], yargs)
+      )
 
-    yargs.demandCommand()
-    yargs.showHelp()
-    api.close()
+
+    // Couldn't get default command to work correctly.
+    // If `ssb` is run without arguments, show help and close.
+    const argv = yargs.argv
+    if ('_' in argv && argv._.length === 0) {
+      yargs.showHelp()
+      api.close()
+      yargs.exit(1)
+    }
   })
 })
