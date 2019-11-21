@@ -1,0 +1,23 @@
+{
+  "name": "ssb-cli",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "ssb-client": "^4.7.9",
+    "yargs": "^15.0.2"
+  },
+  "bin": {
+    "ssb": "./index.js",
+    "ssb-cli": "./index.js"
+  },
+  "devDependencies": {
+    "cspell": "^4.0.34",
+    "dependency-check": "^4.1.0",
+    "standard": "^14.3.1",
+    "typescript": "^3.7.2"
+  },
+  "scripts": {
+    "test": "standard && dependency-check ./package.json --unused --no-dev --ignore-module highlight.js --ignore-module @fraction/base16-css && cspell --no-summary '**/*.{js,md}' && tsc --allowJs --resolveJsonModule --lib dom --checkJs --noEmit --skipLibCheck *.js"
+  }
+}
