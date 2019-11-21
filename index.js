@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-const yargs = require('yargs')
-
+const pull = require('pull-stream')
 const ssbClient = require('ssb-client')
+const yargs = require('yargs')
 
 const supportedMuxrpcTypes = [
   'sync',
-  'async'
+  'async',
+  'source'
 ]
 
 ssbClient((err, api) => {
@@ -55,32 +56,47 @@ ssbClient((err, api) => {
         if (supportedMuxrpcTypes.includes(value)) {
           subYargs.command(key, emptyDescription, () => {}, (argv) => {
             const parts = argv._
-            const method = parts.reduce((acc, cur) => {
-              if (acc !== null && cur in acc) {
-                acc = acc[cur]
+            const data = parts.reduce((acc, cur) => {
+              if (acc !== null && cur in acc.api) {
+                acc = { api: acc.api[cur], manifest: acc.manifest[cur] }
               } else {
                 acc = null
               }
               return acc
-            }, api)
+            }, { api, manifest })
+
+            const method = data.api
+            const methodType = data.manifest
 
             if (typeof method === 'function') {
               // Remove CLI-specific arguments.
               delete argv._
               delete argv.$0
 
-              method(argv, (err, val) => {
-                const commonMessage = 'Cannot read property \'apply\' of undefined'
-                if (err) {
-                  if (err.name === 'TypeError' && err.message === commonMessage) {
-                    console.log('Oops! It looks like this method is advertised over muxrpc but not actually available on the server.')
-                    console.log('Let a developer know about this problem and someone will fix it immediately.')
+              if (methodType === 'source') {
+                pull(
+                  method(argv),
+                  pull.drain((data) => {
+                    console.log(JSON.stringify(data, null, 2))
+                  }, () => {
+                    api.close()
+                  })
+                )
+              } else {
+                method(argv, (err, val) => {
+                  const commonMessage = 'Cannot read property \'apply\' of undefined'
+                  if (err) {
+                    if (err.name === 'TypeError' && err.message === commonMessage) {
+                      console.log('Oops! It looks like this method is advertised over muxrpc but not actually available on the server.')
+                      console.log('Let a developer know about this problem and someone will fix it immediately.')
+                    }
+                    throw err
                   }
-                  throw err
-                }
-                console.log(JSON.stringify(val, null, 2))
-                api.close()
-              })
+
+                  console.log(JSON.stringify(val, null, 2))
+                  api.close()
+                })
+              }
             } else {
               yargs.showHelp()
               api.close()
