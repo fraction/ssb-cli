@@ -98,7 +98,7 @@ ssbClient((err, api) => {
                 })
               }
             } else {
-              yargs.showHelp()
+              // Don't remember why (or if) this still happens.
               api.close()
             }
           })
@@ -111,8 +111,6 @@ ssbClient((err, api) => {
             entries.forEach((entry) =>
               walk(entry, [key, ...previous], subSubYargs)
             )
-          }, () => {
-            yargs.showHelp()
           })
         }
       }
