@@ -9,36 +9,43 @@ one running in the background. See the **See Also** list at the bottom for optio
 ## Usage
 
 ```console
-$ ssb-cli --help
-ssb-cli <command>
+$ ssb --help
+ssb <command>
 
 Commands:
-  ssb-cli auth
-  ssb-cli address
-  ssb-cli manifest
-  ssb-cli multiserver
-  ssb-cli get
-  ssb-cli add
-  ssb-cli publish
-  ssb-cli getAddress
-  ssb-cli getLatest
-  ssb-cli latestSequence
-  ssb-cli whoami
-  ssb-cli del
-  ssb-cli progress
-  ssb-cli status
-  ssb-cli getVectorClock
-  ssb-cli version
-  ssb-cli help
-  ssb-cli seq
-  ssb-cli usage
-  ssb-cli clock
-  ssb-cli replicate
-  ssb-cli about
-  ssb-cli blobs
-  ssb-cli gossip
-  ssb-cli invite
-  ssb-cli query
+  ssb auth
+  ssb address
+  ssb manifest
+  ssb multiserver
+  ssb get
+  ssb createFeedStream
+  ssb createLogStream
+  ssb messagesByType
+  ssb createHistoryStream
+  ssb createUserStream
+  ssb links
+  ssb add
+  ssb publish
+  ssb getAddress
+  ssb getLatest
+  ssb latest
+  ssb latestSequence
+  ssb whoami
+  ssb del
+  ssb progress
+  ssb status
+  ssb getVectorClock
+  ssb version
+  ssb help
+  ssb seq
+  ssb usage
+  ssb clock
+  ssb replicate
+  ssb about
+  ssb blobs
+  ssb gossip
+  ssb invite
+  ssb query
 
 Options:
   --help     Show help                                                 [boolean]
