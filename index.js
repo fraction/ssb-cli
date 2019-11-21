@@ -21,7 +21,6 @@ ssbClient((err, api) => {
   }
   api.manifest((err, rawManifest) => {
     if (err) throw err
-    const emptyDescription = ''
 
     const prune = (obj, ref) => {
       return Object.entries(obj).map(([key, value]) => {
@@ -65,7 +64,7 @@ ssbClient((err, api) => {
     const walk = ([key, value], previous, subYargs) => {
       if (typeof value === 'string') {
         if (supportedMuxrpcTypes.includes(value)) {
-          subYargs.command(key, emptyDescription, () => {}, (argv) => {
+          subYargs.command(key, value, () => {}, (argv) => {
             const parts = argv._
             const data = parts.reduce((acc, cur) => {
               if (acc !== null && cur in acc.api) {
@@ -118,7 +117,7 @@ ssbClient((err, api) => {
         const entries = Object.entries(value)
         // Don't include objects with no entries (like ws).
         if (entries.length > 0) {
-          subYargs.command(key, emptyDescription, (subSubYargs) => {
+          subYargs.command(key, 'group', (subSubYargs) => {
             entries.forEach((entry) =>
               walk(entry, [key, ...previous], subSubYargs)
             )
@@ -135,7 +134,6 @@ ssbClient((err, api) => {
       .forEach((entry) =>
         walk(entry, [], yargs)
       )
-
 
     // Couldn't get default command to work correctly.
     // If `ssb` is run without arguments, show help and close.
