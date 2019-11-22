@@ -5,7 +5,9 @@
 This is a small experimental client that connects to an existing SSB service
 and runs commands over [MuxRPC][muxrpc]. All usage information is generated
 dynamically from the [MuxRPC-Usage][muxrpc-usage] format and passed to the 
-command-line interface via [Yargs][yargs]. Good luck and have fun!
+command-line interface via [Yargs][yargs].
+
+**Status:** Alpha. Please reach out to share feedback and suggestions!
 
 ## Usage
 
