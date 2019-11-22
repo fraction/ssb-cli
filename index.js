@@ -57,10 +57,11 @@ ssbClient((err, api) => {
                * Maybe later we can add this back? Or maybe the help() will get
                * standardized so we don't have to call the method repeatedly.
                */
+              return []
+            } else {
+              // This method is good to go, we can run it just fine.
+              return [key, value]
             }
-
-            // This method is good to go, we can run it just fine.
-            return [key, value]
           } else {
             // This method doesn't exist in our local API. Prune it!
             return []
