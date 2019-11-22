@@ -101,20 +101,16 @@ ssbClient((err, api) => {
           const parts = argv._
 
           // We need to get the actual method from the API object plus the manifest.
-          const data = parts.reduce((acc, cur) => {
-            if (acc !== null && cur in acc.api) {
-              acc = { api: acc.api[cur], manifest: acc.manifest[cur] }
+          const method = parts.reduce((acc, cur) => {
+            if (acc !== null && cur in acc) {
+              acc = acc[cur]
             } else {
               acc = null
             }
             return acc
-          }, { api, manifest })
+          }, api)
 
-          const method = data.api
-
-          // Maybe this could be replaced with `value`?
-          // It would definitely clean up the `reduce()` above.
-          const methodType = data.manifest
+          const methodType = value
 
           // Remove CLI-specific arguments.
           // Maybe we should be making a copy instead of mutating the object...
