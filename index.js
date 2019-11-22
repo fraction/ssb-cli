@@ -3,20 +3,71 @@
 const pull = require('pull-stream')
 const ssbClient = require('ssb-client')
 const yargs = require('yargs')
+const debug = require('debug')('ssb-client')
 
-const supportedMuxrpcTypes = [
-  'sync',
-  'async',
-  'source'
-]
-
-const dictionary = {
-  'sync': 'synchronous method',
-  'async': 'asynchronous method',
-  'source': 'streamable source method'
-}
+const pruneManifest = require('./lib/prune-manifest')
+const getUsage = require('./lib/get-usage')
 
 let handled = false
+
+const getMethod = (api, parts) => parts.reduce((acc, cur) => {
+  if (acc !== null && cur in acc) {
+    acc = acc[cur]
+  } else {
+    acc = null
+  }
+  return acc
+}, api)
+
+const supportedTypes = [
+  'array',
+  'boolean',
+  'number',
+  'string'
+]
+
+const typeDictionary = {
+  FeedId: 'string',
+  MessageId: 'string',
+  SequenceNumber: 'number',
+  BlobId: 'string'
+}
+
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+
+const createGetCommandUsage = (usage) => (parts) => {
+  const unknown = {
+    description: ''
+  }
+
+  // Silly hack to fix how usage is output.
+  // The top-level commands are:
+  //
+  //   usage.help.commands.createHistoryStream()
+  //
+  // Others are:
+  //
+  //   usage.friends.block()
+  if (parts.length === 1) {
+    parts = ['help', parts[0]]
+  }
+
+  return parts.reduce((acc, cur, idx) => {
+    if (idx === parts.length - 1) {
+      if ('commands' in acc && cur in acc.commands) {
+        acc = acc.commands[cur]
+      } else {
+        acc = unknown
+      }
+    } else {
+      if (cur in acc) {
+        acc = acc[cur]
+      }
+    }
+
+    return acc
+  }, usage)
+}
 
 // Connect to an SSB service on the standard host and port (localhost + 8008).
 ssbClient((err, api) => {
@@ -25,67 +76,19 @@ ssbClient((err, api) => {
       console.log('Oops! It looks like we couldn\'t connect to SSB. This module doesn\'t run a server, so you need to start one in the background.')
       console.log('Currently the simplest way to do this is to open an SSB app or run `ssb-server start`.')
       console.log() // a e s t h e t i c
+      yargs.exit(1)
+    } else {
+      throw err
     }
-    throw err
   }
 
   // Get the manifest from the server, which, strangely, exports methods we don't have access to.
-  api.manifest((err, rawManifest) => {
+  api.manifest(async (err, rawManifest) => {
     if (err) throw err
 
-    // Sometimes the manifest file we get comes with methods we can't run.
-    // See also: https://github.com/ssbc/muxrpc/issues/55
-    //
-    // This method recursively prunes the manifest to remove methods that
-    // we can't actually access. I'm sure there's a better way to do this.
-    const prune = (obj, ref) => {
-      return Object.entries(obj).map(([key, value]) => {
-        if (typeof value === 'string') {
-          // Method!
-          // Any code that falls into this condition is like: ["whoami", "sync"]
-          if (key in ref && supportedMuxrpcTypes.includes(value)) {
-            if (key === 'help') {
-              /*
-               * This parses muxrpc help text, but it seems too experimental.
-               * See also: https://github.com/ssbc/muxrpc/issues/54
-               *
-               *     ref[key]((err, value) => {
-               *       if (err) throw err
-               *       console.log(value)
-               *     })
-               *
-               * Maybe later we can add this back? Or maybe the help() will get
-               * standardized so we don't have to call the method repeatedly.
-               */
-              return []
-            } else {
-              // This method is good to go, we can run it just fine.
-              return [key, value]
-            }
-          } else {
-            // This method doesn't exist in our local API. Prune it!
-            return []
-          }
-        } else if (typeof key === 'string' && typeof value === 'object' && key in ref && ref[key] != null && Object.entries(ref[key]).length > 1) {
-          // Objects are the only things that pass this condition. Like: [ "blobs": { "add": "sync", "ls", "async" ]
-          // We want to recursively prune these objects.
-          const result = [key, prune(value, ref[key])]
-          return result
-        } else {
-          // FAIL
-          return []
-        }
-      }).reduce((acc, [key, value]) => {
-        // This takes our entries and zip them back up into an object.
-        if (key && value) {
-          acc[key] = value
-        }
-
-        return acc
-      }, {})
-    }
-
-    const manifest = prune(rawManifest, api)
+    const manifest = pruneManifest(rawManifest, api)
+    const usage = await getUsage(api)
+    const getCommandUsage = createGetCommandUsage(usage)
 
     // Now we want to add commands for each of the muxrpc methods above.
     // There are two types of "commands" we're adding:
@@ -95,96 +98,111 @@ ssbClient((err, api) => {
     //           if these are called we should just call `yargs.showHelp()`.
     const walk = ([key, value], previous, subYargs) => {
       if (typeof value === 'string') {
-        subYargs.command(key, dictionary[value], () => {}, (argv) => {
-          handled = true
+        const u = getCommandUsage([...previous, key])
+        subYargs
+          .command(key, `${capitalize(u.description)} (${value})`, (builder) => {
+            if (typeof u.args === 'object') {
+              debug('%O', u.args)
+              Object.entries(u.args).forEach(([key, value]) => {
+                const definition = {}
 
-          const parts = argv._
+                definition.describe = capitalize(value.description)
 
-          // We need to get the actual method from the API object plus the manifest.
-          const method = parts.reduce((acc, cur) => {
-            if (acc !== null && cur in acc) {
-              acc = acc[cur]
-            } else {
-              acc = null
+                if (value.type) {
+                  if (supportedTypes.includes(value.type)) {
+                    definition.type = value.type
+                  } else {
+                    if (value.type in typeDictionary) {
+                      definition.type = typeDictionary[value.type]
+                    } else {
+                      debug('Missing type definition: %s', value.type)
+                    }
+                    definition.describe = `${definition.describe} (${value.type})`
+                  }
+                }
+
+                definition.default = value.default
+                definition.required = value.optional === false
+
+                builder.option(key, definition)
+              })
             }
-            return acc
-          }, api)
+          }, (argv) => {
+            handled = true
 
-          const methodType = value
+            const method = getMethod(api, argv._)
+            const methodType = value
 
-          // Remove CLI-specific arguments.
-          // Maybe we should be making a copy instead of mutating the object...
-          delete argv._
-          delete argv.$0
+            const options = JSON.parse(JSON.stringify(argv._))
+            delete options._
+            delete options.$0
 
-          if (methodType === 'source') {
-            pull(
-              method(argv),
-              pull.drain((data) => {
-                console.log(JSON.stringify(data, null, 2))
-              }, () => {
+            // Remove CLI-specific arguments.
+            // Maybe we should be making a copy instead of mutating the object...
+            if (methodType === 'source') {
+              pull(
+                method(options),
+                pull.drain((data) => {
+                  console.log(JSON.stringify(data, null, 2))
+                }, () => {
                 // When we're done with the stream, close it!
+                  api.close()
+                })
+              )
+            } else {
+              method(options, (err, val) => {
+                const commonMessage = 'Cannot read property \'apply\' of undefined'
+                if (err) {
+                  if (err.name === 'TypeError' && err.message === commonMessage) {
+                    console.log('Oops! It looks like this method is advertised over muxrpc but not actually available on the server.')
+                    console.log('Let a developer know about this problem and someone will fix it immediately.')
+                    yargs.exit(1)
+                  } else {
+                    throw err
+                  }
+                }
+
+                console.log(JSON.stringify(val, null, 2))
                 api.close()
               })
-            )
-          } else {
-            method(argv, (err, val) => {
-              const commonMessage = 'Cannot read property \'apply\' of undefined'
-              if (err) {
-                if (err.name === 'TypeError' && err.message === commonMessage) {
-                  console.log('Oops! It looks like this method is advertised over muxrpc but not actually available on the server.')
-                  console.log('Let a developer know about this problem and someone will fix it immediately.')
-                }
-                throw err
-              }
-
-              console.log(JSON.stringify(val, null, 2))
-              api.close()
-            })
-          }
-        })
+            }
+          })
       } else {
         // This is actually a group of commands (or, and "object" in JS lingo).
         // If someone tries to call this command, we show the help text and exit.
         //
         // You really aren't supposed to call these commands, but they make for
         // a really great help-text experience so it's important to make them useful.
-
         const entries = Object.entries(value)
 
-        // Don't include objects with no entries (like ws).
-        // NOTE: I think this is handled elsewhere. Maybe we can remove this length check?
-        if (entries.length > 0) {
-          subYargs.command(key, 'group of methods', (subSubYargs) => {
-            entries.forEach((entry) =>
-              walk(entry, [key, ...previous], subSubYargs)
-            )
-          }, () => {
-            handled = true
-            yargs.showHelp()
-            yargs.exit(1)
-          })
-        }
+        subYargs.command(key, '(group)', (subSubYargs) => {
+          entries.filter(([key]) => key !== 'help').forEach((entry) =>
+            walk(entry, [key, ...previous], subSubYargs)
+          )
+        }, () => {
+          handled = true
+          yargs.showHelp()
+          yargs.exit(1)
+        })
       }
     }
-
 
     // Create the commands!
     Object
       .entries(manifest)
+      .filter(([key]) => key !== 'help')
       .forEach((entry) =>
         walk(entry, [], yargs)
       )
 
     // This is magical and seems to start yargs.
-    yargs.argv
+    yargs.argv // eslint-disable-line
 
     // Couldn't get default command to work correctly.
     // If `ssb` is run without arguments, show help and close.
     if (handled === false) {
       yargs.showHelp()
       api.close()
-      yargs.exit(1)
     }
   })
 })

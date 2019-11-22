@@ -3,10 +3,12 @@
     "language": "en",
     "words": [
         "AGPL",
-        "muxrpc",
+        "MuxRPC",
+        "MuxRPCLI",
         "Patchbay",
         "whoami",
         "multiserver",
+        "fromentries",
         "sbot"
     ]
 }
