@@ -6,9 +6,10 @@
         "MuxRPC",
         "MuxRPCLI",
         "Patchbay",
-        "whoami",
-        "multiserver",
         "fromentries",
-        "sbot"
+        "multiserver",
+        "promisify",
+        "sbot",
+        "whoami"
     ]
 }

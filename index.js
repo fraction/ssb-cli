@@ -1,94 +1,42 @@
 #!/usr/bin/env node
 
+const debug = require('debug')('ssb-client')
+const lodash = require('lodash')
 const pull = require('pull-stream')
 const ssbClient = require('ssb-client')
 const yargs = require('yargs')
-const debug = require('debug')('ssb-client')
+const { promisify } = require('util')
 
-const pruneManifest = require('./lib/prune-manifest')
+const createUsageGetter = require('./lib/create-usage-getter')
+const defineCommand = require('./lib/define-command')
 const getUsage = require('./lib/get-usage')
-
-let handled = false
-
-const getMethod = (api, parts) => parts.reduce((acc, cur) => {
-  if (acc !== null && cur in acc) {
-    acc = acc[cur]
-  } else {
-    acc = null
-  }
-  return acc
-}, api)
-
-const supportedTypes = [
-  'array',
-  'boolean',
-  'number',
-  'string'
-]
-
-const typeDictionary = {
-  FeedId: 'string',
-  MessageId: 'string',
-  SequenceNumber: 'number',
-  BlobId: 'string'
-}
+const handleError = require('./lib/handle-err')(yargs.exit)
+const pruneManifest = require('./lib/prune-manifest')
 
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+const outputAsJSON = (data) => console.log(JSON.stringify(data, null, 2))
 
-const createGetCommandUsage = (usage) => (parts) => {
-  const unknown = {
-    description: ''
-  }
-
-  // Silly hack to fix how usage is output.
-  // The top-level commands are:
-  //
-  //   usage.help.commands.createHistoryStream()
-  //
-  // Others are:
-  //
-  //   usage.friends.block()
-  if (parts.length === 1) {
-    parts = ['help', parts[0]]
-  }
-
-  return parts.reduce((acc, cur, idx) => {
-    if (idx === parts.length - 1) {
-      if ('commands' in acc && cur in acc.commands) {
-        acc = acc.commands[cur]
-      } else {
-        acc = unknown
-      }
-    } else {
-      if (cur in acc) {
-        acc = acc[cur]
-      }
-    }
-
-    return acc
-  }, usage)
-}
+const getNormalizedEntries = (obj) =>
+  Object.entries(obj)
+    .filter(([key]) => key !== 'help')
+    .sort(([aKey], [bKey]) => aKey.localeCompare(bKey))
 
 // Connect to an SSB service on the standard host and port (localhost + 8008).
-ssbClient((err, api) => {
-  if (err) {
-    if (err.message === 'could not connect to sbot') {
-      console.log('Oops! It looks like we couldn\'t connect to SSB. This module doesn\'t run a server, so you need to start one in the background.')
-      console.log('Currently the simplest way to do this is to open an SSB app or run `ssb-server start`.')
-      console.log() // a e s t h e t i c
-      yargs.exit(1)
-    } else {
-      throw err
-    }
+promisify(ssbClient)().then((api) => {
+  const showHelpAndClose = (code) => {
+    yargs.showHelp()
+    api.close()
+    yargs.exit(code)
   }
 
   // Get the manifest from the server, which, strangely, exports methods we don't have access to.
-  api.manifest(async (err, rawManifest) => {
-    if (err) throw err
-
+  promisify(api.manifest)().then(async (rawManifest) => {
     const manifest = pruneManifest(rawManifest, api)
     const usage = await getUsage(api)
-    const getCommandUsage = createGetCommandUsage(usage)
+    const getCommandUsage = createUsageGetter(usage)
+    const getGroupUsage = (parts) => lodash.get(usage, parts, {
+      description: ''
+    })
 
     // Now we want to add commands for each of the muxrpc methods above.
     // There are two types of "commands" we're adding:
@@ -97,42 +45,44 @@ ssbClient((err, api) => {
     // - Groups: these are actually objects that encapsulate muxrpc methods, and
     //           if these are called we should just call `yargs.showHelp()`.
     const walk = ([key, value], previous, subYargs) => {
-      if (typeof value === 'string') {
-        const u = getCommandUsage([...previous, key])
-        subYargs
-          .command(key, `${capitalize(u.description)} (${value})`, (builder) => {
-            if (typeof u.args === 'object') {
-              debug('%O', u.args)
-              Object.entries(u.args).forEach(([key, value]) => {
-                const definition = {}
+      if (typeof value === 'object') {
+        // Group of commands. It should show the help text and then exit.
+        // If someone tries to call this command, we show the help text and exit.
+        const groupUsage = getGroupUsage([...previous, key])
+        const description = `${capitalize(groupUsage.description)} (group)`
 
-                definition.describe = capitalize(value.description)
+        subYargs.command(
+          key,
+          description,
+          (subSubYargs) => {
+            getNormalizedEntries(value).forEach((entry) =>
+              walk(entry, [key, ...previous], subSubYargs)
+            )
+          },
+          () => showHelpAndClose(0)
+        )
+      } else if (typeof value === 'string') {
+        const methodType = value
 
-                if (value.type) {
-                  if (supportedTypes.includes(value.type)) {
-                    definition.type = value.type
-                  } else {
-                    if (value.type in typeDictionary) {
-                      definition.type = typeDictionary[value.type]
-                    } else {
-                      debug('Missing type definition: %s', value.type)
-                    }
-                    definition.describe = `${definition.describe} (${value.type})`
-                  }
-                }
+        const commandUsage = getCommandUsage([...previous, key])
+        const description = `${capitalize(commandUsage.description)} (${methodType})`
 
-                definition.default = value.default
-                definition.required = value.optional === false
-
+        subYargs.command(
+          key,
+          description,
+          (builder) => {
+            if (typeof commandUsage.args === 'object') {
+              debug('%O', commandUsage.args)
+              getNormalizedEntries(commandUsage.args).forEach(([key, value]) => {
+                // Parse muxrpc-usage info and add yargs options
+                const definition = defineCommand(value)
                 builder.option(key, definition)
               })
             }
           }, (argv) => {
-            handled = true
+            const method = lodash.get(api, argv._)
 
-            const method = getMethod(api, argv._)
-            const methodType = value
-
+            // Remove yargs-specific CLI options and pass the rest to the method.
             const options = JSON.parse(JSON.stringify(argv._))
             delete options._
             delete options.$0
@@ -142,67 +92,39 @@ ssbClient((err, api) => {
             if (methodType === 'source') {
               pull(
                 method(options),
-                pull.drain((data) => {
-                  console.log(JSON.stringify(data, null, 2))
-                }, () => {
-                // When we're done with the stream, close it!
-                  api.close()
-                })
+                pull.drain(outputAsJSON, api.close)
               )
-            } else {
-              method(options, (err, val) => {
-                const commonMessage = 'Cannot read property \'apply\' of undefined'
-                if (err) {
-                  if (err.name === 'TypeError' && err.message === commonMessage) {
-                    console.log('Oops! It looks like this method is advertised over muxrpc but not actually available on the server.')
-                    console.log('Let a developer know about this problem and someone will fix it immediately.')
-                    yargs.exit(1)
-                  } else {
-                    throw err
-                  }
-                }
-
-                console.log(JSON.stringify(val, null, 2))
+            } else if (methodType === 'sync' || methodType === 'async') {
+              promisify(method)(options).then((value) => {
+                outputAsJSON(value)
                 api.close()
-              })
+              }).catch(handleError)
+            } else {
+              // This should never happen because we should be pruning method
+              // types that we don't support in `pruneManifest()`.
+              throw new Error(`Unsupported method type: ${methodType}`)
             }
           })
       } else {
-        // This is actually a group of commands (or, and "object" in JS lingo).
-        // If someone tries to call this command, we show the help text and exit.
-        //
-        // You really aren't supposed to call these commands, but they make for
-        // a really great help-text experience so it's important to make them useful.
-        const entries = Object.entries(value)
-
-        subYargs.command(key, '(group)', (subSubYargs) => {
-          entries.filter(([key]) => key !== 'help').forEach((entry) =>
-            walk(entry, [key, ...previous], subSubYargs)
-          )
-        }, () => {
-          handled = true
-          yargs.showHelp()
-          yargs.exit(1)
-        })
+        debug('Unknown type "%s": %O', key, value)
       }
     }
 
-    // Create the commands!
-    Object
-      .entries(manifest)
-      .filter(([key]) => key !== 'help')
-      .forEach((entry) =>
+    yargs.command('*', 'default command', () => {
+      getNormalizedEntries(manifest).forEach((entry) =>
         walk(entry, [], yargs)
       )
+    }, (argv) => {
+      yargs.showHelp()
+      api.close()
+
+      if (argv._.length > 0) {
+        // Use was actually trying to do something. Maybe a typo?
+        yargs.exit(1)
+      }
+    })
 
     // This is magical and seems to start yargs.
     yargs.argv // eslint-disable-line
-
-    // Couldn't get default command to work correctly.
-    // If `ssb` is run without arguments, show help and close.
-    if (handled === false) {
-      yargs.showHelp()
-      api.close()
-    }
   })
-})
+}).catch(handleError)
