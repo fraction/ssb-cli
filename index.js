@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const debug = require('debug')('ssb-client')
+const debug = require('debug')('ssb-cli')
 const lodash = require('lodash')
 const pull = require('pull-stream')
 const ssbClient = require('ssb-client')
