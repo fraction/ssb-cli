@@ -110,7 +110,9 @@ promisify(ssbClient)().then((api) => {
       }
     }
 
-    yargs.command('*', 'default command', () => {
+    yargs
+      .scriptName('ssb')
+      .command('*', 'Friendly command-line interface for Secure Scuttlebutt', () => {
       getNormalizedEntries(manifest).forEach((entry) =>
         walk(entry, [], yargs)
       )
