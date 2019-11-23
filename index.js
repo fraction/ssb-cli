@@ -59,7 +59,7 @@ promisify(ssbClient)().then((api) => {
               walk(entry, [key, ...previous], subSubYargs)
             )
           },
-          () => showHelpAndClose(0)
+          () => showHelpAndClose(1)
         )
       } else if (typeof value === 'string') {
         const methodType = value
