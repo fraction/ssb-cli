@@ -80,7 +80,13 @@ promisify(ssbClient)().then((api) => {
               })
             }
           }, (argv) => {
-            const method = lodash.get(api, argv._)
+            const method = lodash.get(api, argv._, null)
+
+            if (method === null) {
+              // Method does not exist.
+              showHelpAndClose(1)
+              return 
+            }
 
             // Remove yargs-specific CLI options and pass the rest to the method.
             const options = JSON.parse(JSON.stringify(argv._))
@@ -113,18 +119,18 @@ promisify(ssbClient)().then((api) => {
     yargs
       .scriptName('ssb')
       .command('*', 'Friendly command-line interface for Secure Scuttlebutt', () => {
-      getNormalizedEntries(manifest).forEach((entry) =>
-        walk(entry, [], yargs)
-      )
-    }, (argv) => {
-      yargs.showHelp()
-      api.close()
+        getNormalizedEntries(manifest).forEach((entry) =>
+          walk(entry, [], yargs)
+        )
+      }, (argv) => {
+        yargs.showHelp()
+        api.close()
 
-      if (argv._.length > 0) {
-        // Use was actually trying to do something. Maybe a typo?
-        yargs.exit(1)
-      }
-    })
+        if (argv._.length > 0) {
+          // Use was actually trying to do something. Maybe a typo?
+          yargs.exit(1)
+        }
+      })
 
     // This is magical and seems to start yargs.
     yargs.argv // eslint-disable-line
