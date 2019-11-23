@@ -85,14 +85,15 @@ promisify(ssbClient)().then((api) => {
             if (method === null) {
               // Method does not exist.
               showHelpAndClose(1)
-              return 
+              return
             }
 
             // Remove yargs-specific CLI options and pass the rest to the method.
-            const options = JSON.parse(JSON.stringify(argv._))
+            const options = JSON.parse(JSON.stringify(argv))
             delete options._
             delete options.$0
 
+            debug('Method options: %O', options)
             // Remove CLI-specific arguments.
             // Maybe we should be making a copy instead of mutating the object...
             if (methodType === 'source') {
