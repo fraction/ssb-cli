@@ -14,29 +14,16 @@ command-line interface via [Yargs][yargs].
 Run commands from your terminal without having to open a client.
 
 ```console
-$ ssb publish --type test --text "hello world"
+$ ssb whoami
 {
-  "key": "%KVBHyC5czt9LRXx6rEcH9ha+A4V0VjqwLx10pwjG540=.sha256",
-  "value": {
-    "previous": "%Z8WnF3ai0px5ZXjH2LmMWTTj3iRcckHutED0YCuUGCI=.sha256",
-    "sequence": 13245,
-    "author": "@+oaWWDs8g73EZFUMfW37R/ULtFEjwKN/DczvdYihjbU=.ed25519",
-    "timestamp": 1574533688644,
-    "hash": "sha256",
-    "content": {
-      "type": "test",
-      "text": "hello world"
-    },
-    "signature": "2aZ+jaGr+faIIedowj0PFyDnO7mmaA5CvCdYXMoyMWGnHTyp4k6eVaFOhN+0ZH/0OmTnACK3hu2aF5zwYr/+Ag==.sig.ed25519"
-  },
-  "timestamp": 1574533688646
+  "id": "@+oaWWDs8g73EZFUMfW37R/ULtFEjwKN/DczvdYihjbU=.ed25519"
 }
 ```
 
 If you make a mistake, you should get a helpful error message with usage info.
 
 ```console
-$ ssb-server createHistoryStream
+$ ssb createHistoryStream
 ssb createHistoryStream
 
 Output messages from a feed in order (source)
