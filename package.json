@@ -24,7 +24,7 @@
     "ssb-cli": "./index.js"
   },
   "scripts": {
-    "test": "standard && dependency-check ./package.json --unused --no-dev --ignore-module highlight.js --ignore-module @fraction/base16-css && cspell --no-summary '**/*.{js,md}' && tsc --allowJs --resolveJsonModule --lib dom --checkJs --noEmit --skipLibCheck index.js"
+    "test": "standard && dependency-check ./package.json --unused --no-dev --ignore-module highlight.js --ignore-module @fraction/base16-css && cspell --no-summary '**/*.{js,md}' && tsc --allowJs --resolveJsonModule --lib dom --checkJs --noEmit --skipLibCheck index.js test.js && node test.js"
   },
   "dependencies": {
     "debug": "^4.1.1",
@@ -38,6 +38,7 @@
     "cspell": "^4.0.34",
     "dependency-check": "^4.1.0",
     "standard": "^14.3.1",
+    "tape": "^4.11.0",
     "typescript": "^3.7.2"
   }
 }
