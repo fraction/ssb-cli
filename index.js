@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // HACK: Fix `process.argv` to replace dots with spaces.
-const replaceDotSubcommands = require('./lib/replace-dot-subcommands')
-process.argv = replaceDotSubcommands(process.argv)
+const replaceDotCommands = require('./lib/replace-dot-commands')
+process.argv = replaceDotCommands(process.argv)
 
 const debug = require('debug')('ssb-cli')
 const lodash = require('lodash')
@@ -139,6 +139,5 @@ promisify(ssbClient)().then((api) => {
 
     // This is magical and seems to start yargs.
     yargs.argv // eslint-disable-line
-
   })
 }).catch(handleError)
