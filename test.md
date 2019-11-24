@@ -9,5 +9,5 @@ Current tests:
 - `node index.js whoami` -- JSON, exit 0
 - `node index.js blobs` -- blobs help text, exit 1
 - `node index.js blobs ls` -- big list of blobs, exit 0
-- `node index.js blobs asdf` -- blobs help text, exit 1
+- `node index.js blobs over the rainbow` -- blobs help text, exit 1
 - `node index.js createUserStream --id "@+oaWWDs8g73EZFUMfW37R/ULtFEjwKN/DczvdYihjbU=.ed25519" --limit ` -- my first message, exit 0
