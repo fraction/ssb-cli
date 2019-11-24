@@ -1,9 +1,9 @@
 const test = require('tape')
 const pruneManifest = require('./lib/prune-manifest')
+const replaceDotCommands = require('./lib/replace-dot-commands')
 const getUsage = require('./lib/get-usage')
 
 const f = () => {}
-
 test('basic sanity tests', async (t) => {
   const api = {
     help: (cb) => cb(null, {
@@ -154,5 +154,39 @@ test('basic sanity tests', async (t) => {
 
   t.deepEqual(expectedUsage, usage, 'correct usage parsing')
 
+  t.end()
+})
+
+test('support dot commands', (t) => {
+  const input = [
+    '/usr/bin/node',
+    '/usr/bin/ssb-cli',
+    'gossip.peers'
+  ]
+
+  const expected = [
+    '/usr/bin/node',
+    '/usr/bin/ssb-cli',
+    'gossip',
+    'peers'
+  ]
+
+  const output = replaceDotCommands(input)
+
+  t.deepEqual(output, expected, 'dot commands replaced')
+  t.end()
+})
+
+test('don\'t replace non-dot commands', (t) => {
+  const input = [
+    '/usr/bin/node',
+    '/usr/bin/ssb-cli',
+    'gossip',
+    'peers'
+  ]
+
+  const output = replaceDotCommands(input)
+
+  t.deepEqual(output, input, 'regular commands not touched')
   t.end()
 })
