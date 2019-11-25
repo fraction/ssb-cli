@@ -57,19 +57,6 @@ $ ssb publish --type contact --contact @abc.xyz --following
 }
 ```
 
-Output messages from a feed in order (source)
-
-Options:
-  --help     Show help                                                 [boolean]
-  --version  Show version number                                       [boolean]
-  --id       A ssb feed identity (FeedId)                    [string] [required]
-  --keys     Include keys                                              [boolean]
-  --limit    Max number of messages to output                           [number]
-  --seq      Sequence number to stream from (SequenceNumber)            [number]
-  --values   Include values                                            [boolean]
-
-Missing required argument: id
-
 ## Installation
 
 With [npm](https://npmjs.org/):
