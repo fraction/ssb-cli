@@ -106,10 +106,15 @@ promisify(ssbClient)().then((api) => {
                 pull.drain(outputAsJSON, api.close)
               )
             } else if (methodType === 'sync' || methodType === 'async') {
-              promisify(method)(options).then((value) => {
-                outputAsJSON(value)
-                api.close()
-              }).catch(handleError)
+              promisify(method)(options)
+                .then((value) => {
+                  console.log('done')
+                  outputAsJSON(value)
+                  api.close()
+                }).catch((err) => {
+                  console.log('caught')
+                  handleError(err)
+                })
             } else {
               // This should never happen because we should be pruning method
               // types that we don't support in `pruneManifest()`.
@@ -139,5 +144,5 @@ promisify(ssbClient)().then((api) => {
 
     // This is magical and seems to start yargs.
     yargs.argv // eslint-disable-line
-  })
+  }).catch(handleError)
 }).catch(handleError)
