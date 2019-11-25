@@ -84,7 +84,11 @@ promisify(ssbClient)().then((api) => {
               })
             }
           }, (argv) => {
-            const positionalInput = JSON.parse(JSON.stringify(argv._.slice(previous.length + 1).join(' ')))
+            const positionalInputArray = argv._.slice(previous.length + 1)
+            const positionalInput = positionalInputArray.length > 1
+              ? positionalInputArray.join(' ')
+              : positionalInputArray[0]
+
             const hasPositionalInput = positionalInput.length
 
             const flagInput = JSON.parse(JSON.stringify(argv))
