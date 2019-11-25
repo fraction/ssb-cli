@@ -108,11 +108,9 @@ promisify(ssbClient)().then((api) => {
             } else if (methodType === 'sync' || methodType === 'async') {
               promisify(method)(options)
                 .then((value) => {
-                  console.log('done')
                   outputAsJSON(value)
                   api.close()
                 }).catch((err) => {
-                  console.log('caught')
                   handleError(err)
                 })
             } else {
