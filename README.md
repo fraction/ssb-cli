@@ -45,7 +45,7 @@ Pass `{ foo: true } ` or `{ foo: false }` with `--foo` or `--no-foo`.
 ```console
 $ ssb publish --type contact --contact @abc.xyz --following
 {
-  "key": "..."
+  "key": "...",
   "value": {
     "...": "...",
     "content": {
