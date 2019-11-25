@@ -84,29 +84,42 @@ promisify(ssbClient)().then((api) => {
               })
             }
           }, (argv) => {
-            const method = lodash.get(api, argv._, null)
+            const positionalInput = JSON.parse(JSON.stringify(argv._.slice(previous.length + 1).join(' ')))
+            const hasPositionalInput = positionalInput.length
+
+            const flagInput = JSON.parse(JSON.stringify(argv))
+            delete flagInput._
+            delete flagInput.$0
+            const hasFlagInput = Object.entries(flagInput).length
+
+            debug('%O', { positionalInput, flagInput })
+
+            const method = lodash.get(api, [...previous, key], null)
 
             if (method === null) {
-              // Method does not exist.
+              debug('Method does not exist')
               showHelpAndClose(1)
               return
             }
 
-            // Remove yargs-specific CLI options and pass the rest to the method.
-            const options = JSON.parse(JSON.stringify(argv))
-            delete options._
-            delete options.$0
+            if (hasPositionalInput && hasFlagInput) {
+              handleError(new Error('You must provide positional arguments or --flag arguments, not both.'))
+            }
 
-            debug('Method options: %O', options)
+            const input = hasPositionalInput ? positionalInput : flagInput
+
+            // Remove yargs-specific CLI options and pass the rest to the method.
+
+            debug('Method input: %O', input)
             // Remove CLI-specific arguments.
             // Maybe we should be making a copy instead of mutating the object...
             if (methodType === 'source') {
               pull(
-                method(options),
+                method(input),
                 pull.drain(outputAsJSON, api.close)
               )
             } else if (methodType === 'sync' || methodType === 'async') {
-              promisify(method)(options)
+              promisify(method)(input)
                 .then((value) => {
                   outputAsJSON(value)
                   api.close()
