@@ -20,7 +20,7 @@ $ ssb whoami
 }
 ```
 
-If you make a mistake, you should get a helpful error message with usage info.
+If you make a mistake or append `--help` you'll get helpful usage information.
 
 ```console
 $ ssb createHistoryStream
@@ -40,7 +40,35 @@ Options:
 Missing required argument: id
 ```
 
-Append `help` or `--help` to any command to see more information.
+Pass `{ foo: true } ` or `{ foo: false }` with `--foo` or `--no-foo`.
+
+```console
+$ ssb publish --type contact --contact @abc.xyz --following
+{
+  "key": "..."
+  "value": {
+    "...": "...",
+    "content": {
+      "type": "contact",
+      "contact": "@abc.xyz",
+      "following": true
+    }
+  }
+}
+```
+
+Output messages from a feed in order (source)
+
+Options:
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
+  --id       A ssb feed identity (FeedId)                    [string] [required]
+  --keys     Include keys                                              [boolean]
+  --limit    Max number of messages to output                           [number]
+  --seq      Sequence number to stream from (SequenceNumber)            [number]
+  --values   Include values                                            [boolean]
+
+Missing required argument: id
 
 ## Installation
 
