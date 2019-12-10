@@ -9,7 +9,6 @@ const lodash = require('lodash')
 const pull = require('pull-stream')
 const ssbClient = require('ssb-client')
 const yargs = require('yargs')
-const yargsParser = require('yargs-parser')
 const { promisify } = require('util')
 
 const createUsageGetter = require('./lib/create-usage-getter')
@@ -93,13 +92,12 @@ promisify(ssbClient)({ host, port }).then((api) => {
             }
           }, (argv) => {
             const positionalInputArray = argv._.slice(previous.length + 1)
-            const positionalInput = positionalInputArray.length > 1
+            const hasPositionalInput = positionalInputArray.length
+            const positionalInput = hasPositionalInput
               ? positionalInputArray.join(' ')
               : positionalInputArray[0]
 
-            const hasPositionalInput = positionalInputArray.length
-
-            const flagInput = yargsParser(positionalInputArray)
+            const flagInput = JSON.parse(JSON.stringify(argv))
             delete flagInput._
             delete flagInput.$0
             const hasFlagInput = Object.entries(flagInput).length
