@@ -28,9 +28,10 @@ const getNormalizedEntries = (obj) =>
 
 // HACK: The regular `yargs` module doesn't let us have asynchronous builders,
 // so we don't have an elegant way of taking --host and --port into account
-// before calling SSB-Client. Instead, we're forced to use the Yargs-Parser to
-// check the --host and --port flags so that we can use them with SSB-Client.
-var { host, port } = yargsParser(process.argv.slice(2))
+// before calling SSB-Client. Instead, we're forced to use environment
+// variables to avoid having these understood as command flags.
+const host = process.env.SSB_HOST
+const port = process.env.SSB_PORT
 
 // Connect to an SSB service on the standard host and port (localhost + 8008).
 promisify(ssbClient)({ host, port }).then((api) => {
@@ -98,7 +99,7 @@ promisify(ssbClient)({ host, port }).then((api) => {
 
             const hasPositionalInput = positionalInputArray.length
 
-            const flagInput = JSON.parse(JSON.stringify(argv))
+            const flagInput = yargsParser(positionalInputArray)
             delete flagInput._
             delete flagInput.$0
             const hasFlagInput = Object.entries(flagInput).length
@@ -150,14 +151,6 @@ promisify(ssbClient)({ host, port }).then((api) => {
 
     yargs
       .scriptName('ssb')
-      .option('host', {
-        description: 'Destination hostname of SSB service',
-        type: 'string'
-      })
-      .option('port', {
-        description: 'Destination port of SSB service',
-        type: 'number'
-      })
       .command('*', 'Friendly command-line interface for Secure Scuttlebutt', () => {
         getNormalizedEntries(manifest).forEach((entry) =>
           walk(entry, [], yargs)
