@@ -1,6 +1,6 @@
 {
   "name": "ssb-cli",
-  "version": "1.5.3",
+  "version": "1.6.0",
   "description": "Friendly command-line interface for Secure Scuttlebutt.",
   "keywords": [
     "cli",
