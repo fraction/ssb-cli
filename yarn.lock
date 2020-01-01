@@ -1606,7 +1606,7 @@ mute-stream@0.0.7:
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.7.tgz#3075ce93bc21b8fab43e1bc4da7e8115ed1e7bab"
   integrity sha1-MHXOk7whuPq0PhvE2n6BFe0ee6s=
 
-muxrpc@^6.4.8:
+muxrpc@^6.4.2:
   version "6.4.8"
   resolved "https://registry.yarnpkg.com/muxrpc/-/muxrpc-6.4.8.tgz#35534192d9f2918486b377ee83f2f8dcfc79b971"
   integrity sha512-9oLoLbiAWZAhgxQzquApj0eSfiTYPWLq4AV5mvCBjsicJKWOJlxAAxypHdlnmHeUbOxrPRweneHI7l+nzY/+aQ==
@@ -2349,15 +2349,14 @@ ssb-caps@^1.0.1:
   resolved "https://registry.yarnpkg.com/ssb-caps/-/ssb-caps-1.1.0.tgz#1cdce2971b13dea8ca595be9668fdf94b5955fb2"
   integrity sha512-qe3qpvchJ+gnH8M/ge4rpL+7eRbSmsEAzNwHkDdrW06OBcziQ6/KuAdmcR6joxCbNeoAXAZF+inkefgE16okXA==
 
-ssb-client@^4.7.9:
-  version "4.7.9"
-  resolved "https://registry.yarnpkg.com/ssb-client/-/ssb-client-4.7.9.tgz#c49260c12736155ef343bbda02728db95655c845"
-  integrity sha512-koVuazgGa+Pz7KHnPTsOFvaKSrE0T38wSO7n6P7ZQp+1BpaoBCI4z8Kq2SvMw521Sz9dK9Rwh2bTakEDRgx84A==
+"ssb-client@github:ssbc/ssb-client#auto-manifest":
+  version "4.7.8"
+  resolved "https://codeload.github.com/ssbc/ssb-client/tar.gz/aeea04c2d748b92f9bbb55755ea23672dda890fb"
   dependencies:
     explain-error "^1.0.1"
     multicb "^1.2.1"
     multiserver "^3.1.2"
-    muxrpc "^6.4.8"
+    muxrpc "^6.4.2"
     pull-hash "^1.0.0"
     pull-stream "^3.6.0"
     ssb-config "^3.2.5"

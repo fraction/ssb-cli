@@ -31,7 +31,7 @@
     "fromentries": "^1.2.0",
     "lodash": "^4.17.15",
     "pull-stream": "^3.6.14",
-    "ssb-client": "^4.7.9",
+    "ssb-client": "github:ssbc/ssb-client#auto-manifest",
     "yargs": "^15.0.2"
   },
   "devDependencies": {
