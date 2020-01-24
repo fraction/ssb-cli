@@ -1,15 +1,15 @@
 {
-    "version": "0.1",
-    "language": "en",
-    "words": [
-        "AGPL",
-        "MuxRPC",
-        "MuxRPCLI",
-        "Patchbay",
-        "fromentries",
-        "multiserver",
-        "promisify",
-        "sbot",
-        "whoami"
-    ]
+  "version": "0.1",
+  "language": "en",
+  "words": [
+    "AGPL",
+    "MuxRPC",
+    "MuxRPCLI",
+    "Patchbay",
+    "fromentries",
+    "multiserver",
+    "promisify",
+    "sbot",
+    "whoami"
+  ]
 }

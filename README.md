@@ -4,7 +4,7 @@
 
 This is a small experimental client that connects to an existing SSB service
 and runs commands over [MuxRPC][muxrpc]. All usage information is generated
-dynamically from the [MuxRPC-Usage][muxrpc-usage] format and passed to the 
+dynamically from the [MuxRPC-Usage][muxrpc-usage] format and passed to the
 command-line interface via [Yargs][yargs].
 
 **Status:** Alpha. Please reach out to share feedback and suggestions!
@@ -40,7 +40,7 @@ Options:
 Missing required argument: id
 ```
 
-Pass `{ foo: true } ` or `{ foo: false }` with `--foo` or `--no-foo`.
+Pass `{ foo: true }` or `{ foo: false }` with `--foo` or `--no-foo`.
 
 ```console
 $ ssb publish --type contact --contact @abc.xyz --following
