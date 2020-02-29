@@ -9,7 +9,6 @@ const lodash = require("lodash");
 const pull = require("pull-stream");
 const ssbClient = require("ssb-client");
 const yargs = require("yargs");
-const { promisify } = require("util");
 
 const createUsageGetter = require("./lib/create-usage-getter");
 const defineCommand = require("./lib/define-command");
@@ -33,7 +32,7 @@ const host = process.env.SSB_HOST;
 const port = process.env.SSB_PORT;
 
 // Connect to an SSB service on the standard host and port (localhost + 8008).
-promisify(ssbClient)({ host, port })
+ssbClient(null, { host, port })
   .then(api => {
     const showHelpAndClose = code => {
       yargs.showHelp();
@@ -42,7 +41,8 @@ promisify(ssbClient)({ host, port })
     };
 
     // Get the manifest from the server, which, strangely, exports methods we don't have access to.
-    promisify(api.manifest)()
+    api
+      .manifest()
       .then(async rawManifest => {
         const manifest = pruneManifest(rawManifest, api);
         const usage = await getUsage(api);
@@ -138,7 +138,7 @@ promisify(ssbClient)({ host, port })
                 if (methodType === "source") {
                   pull(method(input), pull.drain(outputAsJSON, api.close));
                 } else if (methodType === "sync" || methodType === "async") {
-                  promisify(method)(input)
+                  method(input)
                     .then(value => {
                       outputAsJSON(value);
                       api.close();
@@ -158,24 +158,30 @@ promisify(ssbClient)({ host, port })
           }
         };
 
-        yargs.scriptName("ssb").command(
-          "*",
-          "Friendly command-line interface for Secure Scuttlebutt",
-          () => {
-            getNormalizedEntries(manifest).forEach(entry =>
-              walk(entry, [], yargs)
-            );
-          },
-          argv => {
-            yargs.showHelp();
-            api.close();
+        yargs
+          .parserConfiguration({
+            "camel-case-expansion": false
+          })
 
-            if (argv._.length > 0) {
-              // Use was actually trying to do something. Maybe a typo?
-              yargs.exit(1);
+          .scriptName("ssb")
+          .command(
+            "*",
+            "Friendly command-line interface for Secure Scuttlebutt",
+            () => {
+              getNormalizedEntries(manifest).forEach(entry =>
+                walk(entry, [], yargs)
+              );
+            },
+            argv => {
+              yargs.showHelp();
+              api.close();
+
+              if (argv._.length > 0) {
+                // Use was actually trying to do something. Maybe a typo?
+                yargs.exit(1);
+              }
             }
-          }
-        );
+          );
 
         // This is magical and seems to start yargs.
         yargs.argv; // eslint-disable-line

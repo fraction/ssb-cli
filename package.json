@@ -32,16 +32,16 @@
     "fromentries": "^1.2.0",
     "lodash": "^4.17.15",
     "pull-stream": "^3.6.14",
-    "ssb-client": "^4.8.0",
+    "ssb-client": "^4.9.0",
     "yargs": "^15.0.2"
   },
   "devDependencies": {
-    "common-good": "^1.1.18",
-    "cspell": "^4.0.34",
+    "common-good": "^1.1.20",
+    "cspell": "^4.0.55",
     "dependency-check": "^4.1.0",
     "standard": "^14.3.1",
-    "tape": "^4.11.0",
-    "typescript": "^3.7.2"
+    "tape": "^4.13.0",
+    "typescript": "^3.8.3"
   },
   "directories": {
     "lib": "lib"
